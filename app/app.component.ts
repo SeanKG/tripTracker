@@ -6,55 +6,52 @@ import { action, alert } from 'ui/dialogs';
 
 import * as geolocation from 'nativescript-geolocation';
 
+
 @Component({
     selector: "my-app",
     templateUrl: "app.component.html",
 })
 export class AppComponent {
-    public counter: number = 16;
+    public trackingStarted:boolean = false;
+    public isTracking:boolean = false;
+    public noTripsLabel = "Record and log your trips";
 
     public loc$: Subject<geolocation.Location>;
-
-    public long: number;
-
     public watchId: number;
-
     public long$: Observable<number>;
-    
+
     @ViewChild("mylabel") myLabel: ElementRef;
 
-    constructor(p: Page) {
+    public longs: string[] = [];
 
+    constructor() {
         this.loc$ = new Subject();
-
         this.long$ = this.loc$.asObservable().map(l => l.longitude);
-
         this.long$.subscribe(v => {
             console.log(v);
             console.log(this.myLabel);
-            this.myLabel.nativeElement.text = v;            
+            this.longs.push(v.toString());
+            this.myLabel.nativeElement.text = this.longs.join(' -> ');            
         });
 
-        p.actionBarHidden = true;
-
-
     }
 
-    public get message(): string {
-        if (this.counter > 0) {
-            return this.counter + " taps left";
-        } else {
-            return "Hoorraaay! \nYou are ready to start building!";
-        }
+    ngOnInit() {
+
+
+        // console.log('ask permission...');
+        // const enabled = geolocation.isEnabled();
+        // console.log(enabled);
+        // if (!enabled) {
+        //     geolocation.enableLocationRequest();
+        // }
     }
-    
-    
 
 
-    public onTap() {
-        this.counter--;
+    public startTracking() {
+        this.trackingStarted = true;
+        this.isTracking = true;
 
-        console.log(this.counter);
 
         this.watchId = geolocation.watchLocation((loc) => {
             if (loc) {
@@ -74,9 +71,19 @@ export class AppComponent {
         }); // Should update every 20 seconds according to Googe documentation. Not verified.
 
 
-//        action('this is the message', 'cancel button', ['action 1', 'action 2', 'action 3']).then(val => alert(val));
+    }
 
+     public stopTracking() {
+        this.isTracking = false;
+        geolocation.clearWatch(this.watchId);
+    }
 
+      public resumeTracking() {
+        this.isTracking = true
+    }
 
+       public completeTracking() {
+        this.isTracking = false
+        this.trackingStarted = false
     }
 }
